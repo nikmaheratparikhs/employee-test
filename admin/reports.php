@@ -49,6 +49,11 @@ include __DIR__ . '/../includes/header.php';
         </tr>
       </thead>
       <tbody>
+        <?php if (!$recent): ?>
+          <tr>
+            <td colspan="4" class="p-6 text-center text-slate-500">No Data</td>
+          </tr>
+        <?php endif; ?>
         <?php foreach ($recent as $r): ?>
           <tr class="border-t">
             <td class="p-3 font-medium text-slate-800"><?= e($r['name']) ?></td>

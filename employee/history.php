@@ -21,6 +21,11 @@ include __DIR__ . '/../includes/header.php';
         </tr>
       </thead>
       <tbody>
+        <?php if (!$attempts): ?>
+          <tr>
+            <td colspan="3" class="p-6 text-center text-slate-500">No Data</td>
+          </tr>
+        <?php endif; ?>
         <?php foreach ($attempts as $row): ?>
           <tr class="border-t">
             <td class="p-3 font-medium text-slate-800"><?= e($row['title']) ?></td>
