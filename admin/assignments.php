@@ -9,28 +9,12 @@ $employees = pdo_fetch_all($pdo, 'SELECT id, name, email FROM users WHERE role =
 $tests = pdo_fetch_all($pdo, 'SELECT id, title FROM tests WHERE is_active = 1 ORDER BY title ASC');
 
 $action = get('action');
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($action === 'remove' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     require_csrf_or_fail();
-    if ($action === 'assign') {
-        $emp = (int)post('employee_id');
-        $test = (int)post('test_id');
-        $due = trim((string)post('due_date'));
-        $limit = (int)(post('attempt_limit') ?? 1);
-        try {
-            $pdo->prepare('INSERT INTO assignments (test_id, employee_id, assigned_by, due_date, attempt_limit) VALUES (?, ?, ?, ?, ?)')
-                ->execute([$test, $emp, $_SESSION['user']['id'], $due ?: null, $limit]);
-            flash_set('success', 'Assignment created.');
-        } catch (Throwable $e) {
-            flash_set('error', 'Could not assign (maybe already assigned).');
-        }
-        redirect('admin/assignments.php?employee_id=' . $emp);
-    }
-    if ($action === 'remove') {
-        $id = (int)post('id');
-        $pdo->prepare('DELETE FROM assignments WHERE id = ?')->execute([$id]);
-        flash_set('success', 'Assignment removed.');
-        redirect('admin/assignments.php');
-    }
+    $id = (int)post('id');
+    $pdo->prepare('DELETE FROM assignments WHERE id = ?')->execute([$id]);
+    flash_set('success', 'Assignment removed.');
+    redirect('admin/assignments.php');
 }
 
 $currentEmp = $employeeId ? pdo_fetch_one($pdo, 'SELECT id, name, email FROM users WHERE id = ? AND role = "employee"', [$employeeId]) : null;

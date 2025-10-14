@@ -21,8 +21,32 @@ function getPDO(): PDO {
 }
 
 function base_url(string $path = ''): string {
+    // Prefer configured base_url when provided
     $config = require __DIR__ . '/config.php';
-    $base = rtrim($config['base_url'], '/');
+    $cfgBase = trim((string)($config['base_url'] ?? ''));
     $path = ltrim($path, '/');
+
+    if ($cfgBase !== '') {
+        $base = rtrim($cfgBase, '/');
+        return $path ? "$base/$path" : $base;
+    }
+
+    // Auto-detect base URL from filesystem + web server context
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+
+    // Project root = parent of this config directory
+    $projectRootFs = realpath(dirname(__DIR__));
+    $docRootFs = realpath($_SERVER['DOCUMENT_ROOT'] ?? '');
+
+    $relative = '';
+    if ($docRootFs && $projectRootFs && strncmp($projectRootFs, $docRootFs, strlen($docRootFs)) === 0) {
+        $relative = trim(str_replace(DIRECTORY_SEPARATOR, '/', substr($projectRootFs, strlen($docRootFs))), '/');
+    } else {
+        // Fallback: use script directory name
+        $relative = trim(dirname($_SERVER['SCRIPT_NAME'] ?? '/'), '/');
+    }
+
+    $base = $scheme . '://' . $host . ($relative !== '' ? '/' . $relative : '');
     return $path ? "$base/$path" : $base;
 }

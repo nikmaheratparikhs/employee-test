@@ -5,44 +5,12 @@ require_role('admin');
 $pdo = getPDO();
 
 $action = get('action');
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($action === 'delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     require_csrf_or_fail();
-    if ($action === 'create') {
-        $name = trim((string)post('name'));
-        $email = trim((string)post('email'));
-        $password = (string)post('password');
-        $interview_date = trim((string)post('interview_date'));
-        if (!$name || !validate_email($email) || strlen($password) < 6) {
-            flash_set('error', 'Please provide valid name, email, and password (>= 6).');
-        } else {
-            $exists = pdo_fetch_one($pdo, 'SELECT id FROM users WHERE email = ?', [$email]);
-            if ($exists) {
-                flash_set('error', 'Email already exists.');
-            } else {
-                $pdo->prepare('INSERT INTO users (name, email, password_hash, role, interview_date) VALUES (?, ?, ?, "employee", ?)')
-                    ->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT), $interview_date ?: null]);
-                flash_set('success', 'Employee created.');
-            }
-        }
-        redirect('admin/employees.php');
-    }
-    if ($action === 'update') {
-        $id = (int)post('id');
-        $name = trim((string)post('name'));
-        $email = trim((string)post('email'));
-        $interview_date = trim((string)post('interview_date'));
-        $is_active = (int)(post('is_active') ? 1 : 0);
-        $pdo->prepare('UPDATE users SET name=?, email=?, interview_date=?, is_active=? WHERE id=? AND role="employee"')
-            ->execute([$name, $email, $interview_date ?: null, $is_active, $id]);
-        flash_set('success', 'Employee updated.');
-        redirect('admin/employees.php');
-    }
-    if ($action === 'delete') {
-        $id = (int)post('id');
-        $pdo->prepare('DELETE FROM users WHERE id = ? AND role = "employee"')->execute([$id]);
-        flash_set('success', 'Employee deleted.');
-        redirect('admin/employees.php');
-    }
+    $id = (int)post('id');
+    $pdo->prepare('DELETE FROM users WHERE id = ? AND role = "employee"')->execute([$id]);
+    flash_set('success', 'Employee deleted.');
+    redirect('admin/employees.php');
 }
 
 $employees = pdo_fetch_all($pdo, 'SELECT * FROM users WHERE role = "employee" ORDER BY created_at DESC');

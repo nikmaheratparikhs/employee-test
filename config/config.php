@@ -3,8 +3,8 @@
 
 return [
     'app_name' => 'Interview & Testing Portal',
-    // Set this to your XAMPP URL path, e.g. http://localhost/portal
-    'base_url' => 'http://localhost/interview_portal',
+    // Leave empty to auto-detect (recommended). Or set e.g. http://localhost/interview_portal
+    'base_url' => '',
 
     // MySQL credentials (XAMPP defaults: user root, empty password)
     'db_host' => '127.0.0.1',

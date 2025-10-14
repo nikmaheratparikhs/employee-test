@@ -24,7 +24,7 @@ $questions = pdo_fetch_all($pdo, 'SELECT * FROM questions WHERE test_id = ? ORDE
 $choicesByQ = [];
 if ($questions) {
     $ids = implode(',', array_map('intval', array_column($questions, 'id')));
-    $rows = $ids ? $pdo->query('SELECT * FROM choices WHERE question_id IN (' . $ids . ') ORDER BY id ASC')->fetchAll() : [];
+    $rows = $ids ? $pdo->query('SELECT * FROM choices WHERE question_id IN (' . $ids . ') ORDER BY id ASC')->fetchAll(PDO::FETCH_ASSOC) : [];
     foreach ($rows as $row) {
         $choicesByQ[$row['question_id']][] = $row;
     }

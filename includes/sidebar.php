@@ -15,9 +15,6 @@ require_once __DIR__ . '/../includes/auth.php';
       <a href="<?= base_url('admin/tests.php') ?>" class="flex items-center gap-2 px-3 py-2 rounded hover:bg-slate-800">
         <span>Tests</span>
       </a>
-      <a href="<?= base_url('admin/questions.php') ?>" class="flex items-center gap-2 px-3 py-2 rounded hover:bg-slate-800">
-        <span>Questions</span>
-      </a>
       <a href="<?= base_url('admin/employees.php') ?>" class="flex items-center gap-2 px-3 py-2 rounded hover:bg-slate-800">
         <span>Employees</span>
       </a>
