@@ -19,7 +19,10 @@ include __DIR__ . '/../includes/header.php';
 ?>
 <div class="flex items-center justify-between mb-4">
   <h1 class="text-xl font-semibold">Tests</h1>
-  <a href="<?= base_url('admin/test_create.php') ?>" class="px-4 py-2 rounded bg-primary-600 text-white hover:bg-primary-700 transition">New Test</a>
+  <div class="flex items-center gap-2">
+    <a href="<?= base_url('admin/tests_import.php') ?>" class="px-4 py-2 rounded border hover:bg-slate-50 transition">Import Test</a>
+    <a href="<?= base_url('admin/test_create.php') ?>" class="px-4 py-2 rounded bg-primary-600 text-white hover:bg-primary-700 transition">New Test</a>
+  </div>
 </div>
 
 <div class="bg-white border border-slate-200 rounded">
