@@ -50,38 +50,9 @@ include __DIR__ . '/../includes/header.php';
 ?>
 <div class="flex items-center justify-between mb-4">
   <h1 class="text-xl font-semibold">Employees</h1>
-  <label for="createDialog" class="px-4 py-2 rounded bg-primary-600 text-white hover:bg-primary-700 transition cursor-pointer">New Employee</label>
+  <a href="<?= base_url('admin/employee_create.php') ?>" class="px-4 py-2 rounded bg-primary-600 text-white hover:bg-primary-700 transition">New Employee</a>
 </div>
 
-<input type="checkbox" id="createDialog" class="hidden" />
-<div class="fixed inset-0 bg-black/30 hidden items-center justify-center p-4" x-data x-show="$el.previousElementSibling.checked" x-transition>
-  <div class="bg-white rounded shadow-xl w-full max-w-lg p-6">
-    <h2 class="font-semibold mb-4">Create Employee</h2>
-    <form method="post" action="<?= base_url('admin/employees.php?action=create') ?>" class="grid grid-cols-1 gap-3">
-      <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
-      <div>
-        <label class="block text-sm text-slate-600 mb-1">Name</label>
-        <input class="w-full border rounded px-3 py-2 focus-ring" name="name" required />
-      </div>
-      <div>
-        <label class="block text-sm text-slate-600 mb-1">Email</label>
-        <input type="email" class="w-full border rounded px-3 py-2 focus-ring" name="email" required />
-      </div>
-      <div>
-        <label class="block text-sm text-slate-600 mb-1">Password</label>
-        <input type="password" class="w-full border rounded px-3 py-2 focus-ring" name="password" required />
-      </div>
-      <div>
-        <label class="block text-sm text-slate-600 mb-1">Interview date</label>
-        <input type="datetime-local" class="w-full border rounded px-3 py-2 focus-ring" name="interview_date" />
-      </div>
-      <div class="mt-2 flex justify-end gap-2">
-        <label for="createDialog" class="px-4 py-2 rounded border">Cancel</label>
-        <button class="px-4 py-2 rounded bg-primary-600 text-white" type="submit">Create</button>
-      </div>
-    </form>
-  </div>
-</div>
 
 <div class="bg-white border border-slate-200 rounded">
   <div class="overflow-x-auto">
@@ -119,7 +90,7 @@ include __DIR__ . '/../includes/header.php';
               <span class="px-2 py-0.5 rounded text-xs <?= $u['is_active'] ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-600' ?>"><?= $u['is_active'] ? 'Yes' : 'No' ?></span>
             </td>
             <td class="p-3 text-right">
-              <label for="edit-<?= $u['id'] ?>" class="text-slate-700 hover:underline cursor-pointer">Edit</label>
+              <a class="text-slate-700 hover:underline" href="<?= base_url('admin/employee_edit.php?id=' . $u['id']) ?>">Edit</a>
               <form method="post" action="<?= base_url('admin/employees.php?action=delete') ?>" class="inline" onsubmit="return confirm('Delete this employee?')">
                 <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>" />
                 <input type="hidden" name="id" value="<?= (int)$u['id'] ?>" />
@@ -128,38 +99,6 @@ include __DIR__ . '/../includes/header.php';
               <a class="ml-3 text-primary-700 hover:underline" href="<?= base_url('admin/assignments.php?employee_id=' . $u['id']) ?>">Assign Tests</a>
             </td>
           </tr>
-
-          <input type="checkbox" id="edit-<?= $u['id'] ?>" class="hidden" />
-          <div class="fixed inset-0 bg-black/30 hidden items-center justify-center p-4" x-data x-show="document.getElementById('edit-<?= $u['id'] ?>').checked" x-transition>
-            <div class="bg-white rounded shadow-xl w-full max-w-lg p-6">
-              <h2 class="font-semibold mb-4">Edit Employee</h2>
-              <form method="post" action="<?= base_url('admin/employees.php?action=update') ?>">
-                <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
-                <input type="hidden" name="id" value="<?= (int)$u['id'] ?>">
-                <div class="grid grid-cols-1 gap-3">
-                  <div>
-                    <label class="block text-sm text-slate-600 mb-1">Name</label>
-                    <input class="w-full border rounded px-3 py-2 focus-ring" name="name" value="<?= e($u['name']) ?>" required />
-                  </div>
-                  <div>
-                    <label class="block text-sm text-slate-600 mb-1">Email</label>
-                    <input type="email" class="w-full border rounded px-3 py-2 focus-ring" name="email" value="<?= e($u['email']) ?>" required />
-                  </div>
-                  <div>
-                    <label class="block text-sm text-slate-600 mb-1">Interview date</label>
-                    <input type="datetime-local" class="w-full border rounded px-3 py-2 focus-ring" name="interview_date" value="<?= e(str_replace(' ', 'T', (string)$u['interview_date'])) ?>" />
-                  </div>
-                  <label class="flex items-center gap-2">
-                    <input type="checkbox" name="is_active" class="border rounded" <?= $u['is_active'] ? 'checked' : '' ?> /> Active
-                  </label>
-                </div>
-                <div class="mt-4 flex justify-end gap-2">
-                  <label for="edit-<?= $u['id'] ?>" class="px-4 py-2 rounded border">Cancel</label>
-                  <button class="px-4 py-2 rounded bg-primary-600 text-white" type="submit">Save</button>
-                </div>
-              </form>
-            </div>
-          </div>
         <?php endforeach; ?>
       </tbody>
     </table>

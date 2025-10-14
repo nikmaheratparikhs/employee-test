@@ -44,8 +44,11 @@ include __DIR__ . '/../includes/header.php';
 </div>
 
 <div class="bg-white border border-slate-200 rounded p-4 mb-6">
-  <h2 class="font-semibold mb-3">Assign a Test</h2>
-  <form method="post" action="<?= base_url('admin/assignments.php?action=assign') ?>" class="grid grid-cols-1 md:grid-cols-5 gap-3">
+  <div class="flex items-center justify-between mb-2">
+    <h2 class="font-semibold">Assign a Test</h2>
+    <a href="<?= base_url('admin/assignment_create.php' . ($employeeId ? ('?employee_id=' . $employeeId) : '')) ?>" class="px-3 py-2 rounded bg-primary-600 text-white">New Assignment</a>
+  </div>
+  <form method="get" action="<?= base_url('admin/assignments.php') ?>" class="grid grid-cols-1 md:grid-cols-5 gap-3">
     <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
     <div class="md:col-span-2">
       <label class="block text-sm text-slate-600 mb-1">Employee</label>
@@ -55,24 +58,8 @@ include __DIR__ . '/../includes/header.php';
         <?php endforeach; ?>
       </select>
     </div>
-    <div class="md:col-span-2">
-      <label class="block text-sm text-slate-600 mb-1">Test</label>
-      <select name="test_id" class="w-full border rounded px-3 py-2">
-        <?php foreach ($tests as $t): ?>
-          <option value="<?= (int)$t['id'] ?>"><?= e($t['title']) ?></option>
-        <?php endforeach; ?>
-      </select>
-    </div>
-    <div>
-      <label class="block text-sm text-slate-600 mb-1">Due date</label>
-      <input type="datetime-local" name="due_date" class="w-full border rounded px-3 py-2 focus-ring" />
-    </div>
-    <div>
-      <label class="block text-sm text-slate-600 mb-1">Attempt limit</label>
-      <input type="number" min="1" name="attempt_limit" value="1" class="w-full border rounded px-3 py-2 focus-ring" />
-    </div>
-    <div class="md:col-span-5">
-      <button class="px-4 py-2 rounded bg-primary-600 text-white" type="submit">Assign</button>
+    <div class="md:col-span-3 flex items-end">
+      <button class="px-4 py-2 rounded border" type="submit">Filter</button>
     </div>
   </form>
 </div>
