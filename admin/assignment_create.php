@@ -13,11 +13,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_csrf_or_fail();
     $emp = (int)post('employee_id');
     $test = (int)post('test_id');
-    $due = trim((string)post('due_date'));
     $limit = (int)(post('attempt_limit') ?? 1);
     try {
-        $pdo->prepare('INSERT INTO assignments (test_id, employee_id, assigned_by, due_date, attempt_limit) VALUES (?, ?, ?, ?, ?)')
-            ->execute([$test, $emp, $_SESSION['user']['id'], $due ?: null, $limit]);
+        $pdo->prepare('INSERT INTO assignments (test_id, employee_id, assigned_by, attempt_limit) VALUES (?, ?, ?, ?)')
+            ->execute([$test, $emp, $_SESSION['user']['id'], $limit]);
         flash_set('success', 'Assignment created.');
         redirect('admin/assignments.php?employee_id=' . $emp);
     } catch (Throwable $e) {
@@ -54,10 +53,6 @@ include __DIR__ . '/../includes/header.php';
           <option value="<?= (int)$t['id'] ?>"><?= e($t['title']) ?></option>
         <?php endforeach; ?>
       </select>
-    </div>
-    <div>
-      <label class="block text-sm text-slate-600 mb-1">Due date</label>
-      <input type="datetime-local" name="due_date" class="w-full border rounded px-3 py-2 focus-ring" />
     </div>
     <div>
       <label class="block text-sm text-slate-600 mb-1">Attempt limit</label>

@@ -17,7 +17,6 @@ include __DIR__ . '/../includes/header.php';
         <tr class="bg-slate-100 text-slate-600">
           <th class="text-left p-3">Title</th>
           <th class="text-left p-3">Assigned</th>
-          <th class="text-left p-3">Due</th>
           <th class="text-left p-3">Time</th>
           <th class="text-left p-3">Status</th>
           <th class="text-right p-3">Actions</th>
@@ -28,7 +27,6 @@ include __DIR__ . '/../includes/header.php';
           <tr class="border-t">
             <td class="p-3 font-medium text-slate-800"><?= e($a['title']) ?></td>
             <td class="p-3 text-slate-600"><?= e($a['assigned_at']) ?></td>
-            <td class="p-3 text-slate-600"><?= e($a['due_date']) ?: '—' ?></td>
             <td class="p-3"><?= e($a['time_limit_minutes']) ?: '—' ?> min</td>
             <td class="p-3 capitalize"><?= e($a['status']) ?></td>
             <td class="p-3 text-right">

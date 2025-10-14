@@ -9,7 +9,6 @@ $kpis = [
   'tests' => pdo_fetch_one($pdo, 'SELECT COUNT(*) as c FROM tests')['c'] ?? 0,
   'assignments' => pdo_fetch_one($pdo, 'SELECT COUNT(*) as c FROM assignments')['c'] ?? 0,
   'attempts' => pdo_fetch_one($pdo, 'SELECT COUNT(*) as c FROM attempts')['c'] ?? 0,
-  'avg_percent' => pdo_fetch_one($pdo, 'SELECT ROUND(AVG(percent),2) as p FROM attempts WHERE submitted_at IS NOT NULL')['p'] ?? 0,
 ];
 
 $recent = pdo_fetch_all($pdo, 'SELECT u.name, t.title, at.percent, at.submitted_at FROM attempts at JOIN assignments a ON a.id = at.assignment_id JOIN users u ON u.id = a.employee_id JOIN tests t ON t.id = a.test_id WHERE at.submitted_at IS NOT NULL ORDER BY at.submitted_at DESC LIMIT 20');
@@ -34,10 +33,6 @@ include __DIR__ . '/../includes/header.php';
   <div class="card card-hover bg-white rounded p-4 border border-slate-200">
     <div class="text-slate-500 text-sm">Attempts</div>
     <div class="text-3xl font-semibold text-slate-800"><?= (int)$kpis['attempts'] ?></div>
-  </div>
-  <div class="card card-hover bg-white rounded p-4 border border-slate-200">
-    <div class="text-slate-500 text-sm">Avg Score</div>
-    <div class="text-3xl font-semibold text-slate-800"><?= (float)$kpis['avg_percent'] ?>%</div>
   </div>
 </div>
 

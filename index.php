@@ -17,7 +17,6 @@ if (is_admin()) {
     $stats = [
         'assigned' => pdo_fetch_one($pdo, 'SELECT COUNT(*) as c FROM assignments WHERE employee_id = ? AND status IN ("assigned","in_progress")', [$userId])['c'] ?? 0,
         'completed' => pdo_fetch_one($pdo, 'SELECT COUNT(*) as c FROM assignments a JOIN attempts t ON t.assignment_id = a.id AND t.submitted_at IS NOT NULL WHERE a.employee_id = ?', [$userId])['c'] ?? 0,
-        'upcoming' => pdo_fetch_one($pdo, 'SELECT COUNT(*) as c FROM assignments WHERE employee_id = ? AND due_date IS NOT NULL AND due_date > NOW()', [$userId])['c'] ?? 0,
     ];
 }
 
@@ -51,10 +50,6 @@ include __DIR__ . '/includes/header.php';
       <div class="text-slate-500 text-sm">Completed</div>
       <div class="text-3xl font-semibold text-slate-800"><?= (int)$stats['completed'] ?></div>
     </div>
-    <div class="card card-hover bg-white rounded p-4 border border-slate-200">
-      <div class="text-slate-500 text-sm">Upcoming Due</div>
-      <div class="text-3xl font-semibold text-slate-800"><?= (int)$stats['upcoming'] ?></div>
-    </div>
   <?php endif; ?>
 </div>
 
@@ -70,6 +65,7 @@ include __DIR__ . '/includes/header.php';
         <a class="block px-3 py-2 rounded border hover:bg-slate-50" href="<?= base_url('admin/tests.php') ?>">Manage Tests</a>
         <a class="block px-3 py-2 rounded border hover:bg-slate-50" href="<?= base_url('admin/employees.php') ?>">Manage Employees</a>
         <a class="block px-3 py-2 rounded border hover:bg-slate-50" href="<?= base_url('admin/assignments.php') ?>">Manage Assignments</a>
+        <a class="block px-3 py-2 rounded border hover:bg-slate-50" href="<?= base_url('admin/reports.php') ?>">Reports</a>
       <?php else: ?>
         <a class="block px-3 py-2 rounded border hover:bg-slate-50" href="<?= base_url('employee/assignments.php') ?>">My Tests</a>
         <a class="block px-3 py-2 rounded border hover:bg-slate-50" href="<?= base_url('employee/history.php') ?>">My History</a>

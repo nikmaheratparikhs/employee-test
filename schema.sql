@@ -78,7 +78,6 @@ CREATE TABLE IF NOT EXISTS assignments (
   employee_id INT NOT NULL,
   assigned_by INT NULL,
   assigned_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  due_date DATETIME NULL,
   attempt_limit INT NOT NULL DEFAULT 1,
   status ENUM('assigned','in_progress','completed') NOT NULL DEFAULT 'assigned',
   CONSTRAINT fk_assignments_test FOREIGN KEY (test_id) REFERENCES tests(id) ON DELETE CASCADE,

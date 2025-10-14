@@ -32,7 +32,7 @@ $title = $title ?? $config['app_name'];
 <body class="bg-slate-50 text-slate-800">
   <div class="min-h-screen flex">
     <?php include __DIR__ . '/sidebar.php'; ?>
-    <main class="flex-1">
+    <main class="flex-1 flex flex-col">
       <header class="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-slate-200">
         <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div class="flex items-center gap-2">
@@ -51,7 +51,7 @@ $title = $title ?? $config['app_name'];
           </div>
         </div>
       </header>
-      <div class="max-w-7xl mx-auto p-4">
+      <div class="flex-1 max-w-7xl mx-auto p-4 w-full">
         <?php if (!empty($flash)): ?>
           <div class="space-y-2 mb-4">
             <?php foreach ($flash as $type => $messages): ?>

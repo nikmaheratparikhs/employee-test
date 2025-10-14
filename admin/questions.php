@@ -58,6 +58,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         flash_set('success', 'Question deleted.');
         redirect('admin/questions.php?test_id=' . $testId);
     }
+    if ($action === 'update_question' && $testId) {
+        $qid = (int)post('id');
+        $text = trim((string)post('question_text'));
+        $type = (string)post('question_type');
+        $points = (float)(post('points') ?? 1);
+        $correctText = $type === 'text' ? trim((string)post('correct_text_answer')) : null;
+
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare('UPDATE questions SET question_text=?, question_type=?, points=?, correct_text_answer=? WHERE id=? AND test_id=?')
+                ->execute([$text, $type, $points, $correctText, $qid, $testId]);
+            // Update choices for non-text: overwrite 4 choices
+            if ($type !== 'text') {
+                $pdo->prepare('DELETE FROM choices WHERE question_id = ?')->execute([$qid]);
+                $choices = [];
+                for ($i = 1; $i <= 4; $i++) {
+                    $ct = trim((string)post('choice_' . $i));
+                    $isC = (int)(post('correct_' . $i) ? 1 : 0);
+                    $choices[] = [$ct, $isC];
+                }
+                $numCorrect = array_sum(array_map(fn($c) => $c[1], $choices));
+                if ($numCorrect === 0) { throw new RuntimeException('Select at least one correct choice.'); }
+                if ($type === 'single' && $numCorrect !== 1) { throw new RuntimeException('Single choice must have exactly one correct answer.'); }
+                foreach ($choices as [$ct, $isC]) {
+                    $pdo->prepare('INSERT INTO choices (question_id, choice_text, is_correct) VALUES (?, ?, ?)')
+                        ->execute([$qid, $ct, $isC]);
+                }
+            } else {
+                // If text question, remove all choices
+                $pdo->prepare('DELETE FROM choices WHERE question_id = ?')->execute([$qid]);
+            }
+            $pdo->commit();
+            flash_set('success', 'Question updated.');
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            flash_set('error', 'Failed to update question: ' . $e->getMessage());
+        }
+        redirect('admin/questions.php?test_id=' . $testId);
+    }
 }
 
 // When test not selected, show a selector
@@ -155,11 +194,14 @@ include __DIR__ . '/../includes/header.php';
           <div class="text-slate-500 text-xs">Question #<?= (int)$q['id'] ?> • <?= e(ucfirst($q['question_type'])) ?> • <?= e($q['points']) ?> pts</div>
           <div class="font-medium text-slate-800"><?= nl2br(e($q['question_text'])) ?></div>
         </div>
-        <form method="post" action="<?= base_url('admin/questions.php?action=delete_question&test_id=' . $testId) ?>" onsubmit="return confirm('Delete this question?')">
-          <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
-          <input type="hidden" name="id" value="<?= (int)$q['id'] ?>">
-          <button class="text-red-700 hover:underline text-sm" type="submit">Delete</button>
-        </form>
+        <div class="space-x-3">
+          <label for="edit-q-<?= (int)$q['id'] ?>" class="text-slate-700 hover:underline text-sm cursor-pointer">Edit</label>
+          <form method="post" action="<?= base_url('admin/questions.php?action=delete_question&test_id=' . $testId) ?>" class="inline" onsubmit="return confirm('Delete this question?')">
+            <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+            <input type="hidden" name="id" value="<?= (int)$q['id'] ?>">
+            <button class="text-red-700 hover:underline text-sm" type="submit">Delete</button>
+          </form>
+        </div>
       </div>
 
       <?php if ($q['question_type'] !== 'text'): ?>
@@ -174,6 +216,60 @@ include __DIR__ . '/../includes/header.php';
       <?php else: ?>
         <div class="mt-2 text-xs text-slate-500">Text answer: <?= e($q['correct_text_answer']) ?: '—' ?></div>
       <?php endif; ?>
+    </div>
+
+    <!-- Edit drawer -->
+    <input type="checkbox" id="edit-q-<?= (int)$q['id'] ?>" class="hidden" />
+    <div class="fixed inset-0 bg-black/30 hidden items-center justify-center p-4" x-data x-show="document.getElementById('edit-q-<?= (int)$q['id'] ?>').checked" x-transition>
+      <div class="bg-white rounded shadow-xl w-full max-w-2xl p-6">
+        <h2 class="font-semibold mb-4">Edit Question #<?= (int)$q['id'] ?></h2>
+        <form method="post" action="<?= base_url('admin/questions.php?action=update_question&test_id=' . $testId) ?>" class="grid grid-cols-1 gap-3">
+          <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+          <input type="hidden" name="id" value="<?= (int)$q['id'] ?>">
+          <div>
+            <label class="block text-sm text-slate-600 mb-1">Question</label>
+            <textarea class="w-full border rounded px-3 py-2 focus-ring" name="question_text" required><?= e($q['question_text']) ?></textarea>
+          </div>
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="block text-sm text-slate-600 mb-1">Type</label>
+              <select name="question_type" class="w-full border rounded px-3 py-2">
+                <?php foreach (['single'=>'Single choice','multiple'=>'Multiple choice','text'=>'Text answer'] as $k=>$v): ?>
+                  <option value="<?= $k ?>" <?= $q['question_type']===$k?'selected':'' ?>><?= $v ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm text-slate-600 mb-1">Points</label>
+              <input type="number" step="0.5" min="0" name="points" value="<?= e($q['points']) ?>" class="w-full border rounded px-3 py-2 focus-ring" />
+            </div>
+            <div>
+              <label class="block text-sm text-slate-600 mb-1">Correct text (if text type)</label>
+              <input type="text" name="correct_text_answer" value="<?= e((string)$q['correct_text_answer']) ?>" class="w-full border rounded px-3 py-2 focus-ring" />
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <?php
+              $existing = $choicesByQ[$q['id']] ?? [];
+              for ($i=1; $i<=4; $i++):
+                $ct = $existing[$i-1]['choice_text'] ?? '';
+                $isC = isset($existing[$i-1]) ? (int)$existing[$i-1]['is_correct'] : 0;
+            ?>
+              <div class="border rounded p-3">
+                <label class="block text-xs text-slate-600 mb-1">Choice <?= $i ?></label>
+                <input name="choice_<?= $i ?>" class="w-full border rounded px-3 py-2 focus-ring" value="<?= e($ct) ?>" />
+                <label class="mt-2 inline-flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="correct_<?= $i ?>" class="border rounded" <?= $isC ? 'checked' : '' ?>> Correct
+                </label>
+              </div>
+            <?php endfor; ?>
+          </div>
+          <div class="flex justify-end gap-2">
+            <label for="edit-q-<?= (int)$q['id'] ?>" class="px-4 py-2 rounded border">Cancel</label>
+            <button class="px-4 py-2 rounded bg-primary-600 text-white" type="submit">Save</button>
+          </div>
+        </form>
+      </div>
     </div>
   <?php endforeach; ?>
 </div>

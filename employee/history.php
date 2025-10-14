@@ -25,7 +25,7 @@ include __DIR__ . '/../includes/header.php';
           <tr class="border-t">
             <td class="p-3 font-medium text-slate-800"><?= e($row['title']) ?></td>
             <td class="p-3 text-slate-600"><?= e($row['submitted_at']) ?></td>
-            <td class="p-3"><span class="px-2 py-0.5 rounded bg-sky-100 text-sky-800 text-xs font-medium"><?= (float)$row['percent'] ?>%</span></td>
+            <td class="p-3"><span class="px-2 py-0.5 rounded bg-sky-100 text-sky-800 text-xs font-medium"><?= (float)$row['percent'] ?>% • <?= number_format(((float)$row['percent'])/100 * 100, 2) ?> pts</span></td>
           </tr>
         <?php endforeach; ?>
       </tbody>

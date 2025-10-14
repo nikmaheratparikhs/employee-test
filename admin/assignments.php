@@ -19,10 +19,9 @@ if ($action === 'remove' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 if ($action === 'reassign' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     require_csrf_or_fail();
     $id = (int)post('id');
-    $due = trim((string)post('due_date'));
     // Increment attempt limit and reset status
-    $stmt = $pdo->prepare('UPDATE assignments SET status="assigned", due_date = ?, attempt_limit = attempt_limit + 1 WHERE id = ?');
-    $stmt->execute([$due ?: null, $id]);
+    $stmt = $pdo->prepare('UPDATE assignments SET status="assigned", attempt_limit = attempt_limit + 1 WHERE id = ?');
+    $stmt->execute([$id]);
     flash_set('success', 'Reassigned: status reset and attempt limit increased.');
     redirect('admin/assignments.php');
 }
@@ -52,7 +51,6 @@ include __DIR__ . '/../includes/header.php';
           <th class="text-left p-3">Employee</th>
           <th class="text-left p-3">Test</th>
           <th class="text-left p-3">Assigned</th>
-          <th class="text-left p-3">Due</th>
           <th class="text-left p-3">Status</th>
           <th class="text-right p-3">Actions</th>
         </tr>
@@ -63,13 +61,11 @@ include __DIR__ . '/../includes/header.php';
             <td class="p-3 font-medium text-slate-800"><?= e($a['employee_name']) ?></td>
             <td class="p-3"><?= e($a['test_title']) ?></td>
             <td class="p-3 text-slate-600"><?= e($a['assigned_at']) ?></td>
-            <td class="p-3 text-slate-600"><?= e($a['due_date']) ?: '—' ?></td>
             <td class="p-3 capitalize"><?= e($a['status']) ?></td>
             <td class="p-3 text-right space-x-3">
               <form method="post" action="<?= base_url('admin/assignments.php?action=reassign') ?>" class="inline">
                 <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
                 <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
-                <input type="datetime-local" name="due_date" class="border rounded px-2 py-1 text-xs" />
                 <button class="text-primary-700 hover:underline text-sm" type="submit">Reassign</button>
               </form>
               <form method="post" action="<?= base_url('admin/assignments.php?action=remove') ?>" class="inline" onsubmit="return confirm('Remove this assignment?')">
