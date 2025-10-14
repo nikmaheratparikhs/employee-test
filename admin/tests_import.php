@@ -17,23 +17,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($f === false) {
       $errors[] = 'Cannot open uploaded file.';
     } else {
-      $header = fgetcsv($f, 0, ',', '"', '\\');
       $expected = ['test_title','test_description','test_category','test_difficulty','test_time_limit_minutes','question_text','question_type','question_points','choice_1','choice_1_correct','choice_2','choice_2_correct','choice_3','choice_3_correct','choice_4','choice_4_correct','correct_text_answer'];
       $normalize = function ($s) {
         $s = (string)$s;
-        // Strip UTF-8 BOM and trim spaces
-        $s = preg_replace('/^\xEF\xBB\xBF/', '', $s);
+        $s = preg_replace('/^\xEF\xBB\xBF/', '', $s); // strip BOM
         return strtolower(trim($s));
       };
-      $normalizedHeader = $header ? array_map($normalize, $header) : null;
-      if (!$normalizedHeader || $normalizedHeader !== $expected) {
-        $errors[] = 'Invalid header. Please use the sample CSV provided.';
+
+      // Try common delimiters for header detection
+      $delimiters = [',',';','\t'];
+      $delimiterUsed = null;
+      $header = null;
+      foreach ($delimiters as $delim) {
+        rewind($f);
+        $header = fgetcsv($f, 0, $delim, '"', '\\');
+        $normalizedHeader = $header ? array_map($normalize, $header) : null;
+        if ($normalizedHeader === $expected) { $delimiterUsed = $delim; break; }
+      }
+
+      if ($delimiterUsed === null) {
+        $errors[] = 'Invalid header or delimiter. Please use the sample CSV (comma-separated).';
       } else {
+        // Move on to subsequent rows after header
         $pdo->beginTransaction();
         try {
           $testIdMap = [];
           $createdTests = 0; $createdQuestions = 0;
-          while (($row = fgetcsv($f, 0, ',', '"', '\\')) !== false) {
+          while (($row = fgetcsv($f, 0, $delimiterUsed, '"', '\\')) !== false) {
             if ($row === null) { continue; }
             // Normalize row length to expected columns
             $row = array_map(fn($v) => trim((string)$v), $row);
@@ -44,7 +54,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (count($row) < count($expected)) {
               $row = array_pad($row, count($expected), '');
             }
-            $data = array_combine($expected, $row);
+            // Build associative row safely without array_combine pitfalls
+            $data = [];
+            foreach ($expected as $i => $key) {
+              $data[$key] = $row[$i] ?? '';
+            }
             $key = trim($data['test_title']);
             if ($key === '') { continue; }
             if (!isset($testIdMap[$key])) {
