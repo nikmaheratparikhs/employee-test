@@ -17,16 +17,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($f === false) {
       $errors[] = 'Cannot open uploaded file.';
     } else {
-      $header = fgetcsv($f);
+      $header = fgetcsv($f, 0, ',', '"', '\\');
       $expected = ['test_title','test_description','test_category','test_difficulty','test_time_limit_minutes','question_text','question_type','question_points','choice_1','choice_1_correct','choice_2','choice_2_correct','choice_3','choice_3_correct','choice_4','choice_4_correct','correct_text_answer'];
-      if (!$header || array_map('strtolower', $header) !== $expected) {
+      $normalize = function ($s) {
+        $s = (string)$s;
+        // Strip UTF-8 BOM and trim spaces
+        $s = preg_replace('/^\xEF\xBB\xBF/', '', $s);
+        return strtolower(trim($s));
+      };
+      $normalizedHeader = $header ? array_map($normalize, $header) : null;
+      if (!$normalizedHeader || $normalizedHeader !== $expected) {
         $errors[] = 'Invalid header. Please use the sample CSV provided.';
       } else {
         $pdo->beginTransaction();
         try {
-          $currentTestKey = null;
           $testIdMap = [];
-          while (($row = fgetcsv($f)) !== false) {
+          $createdTests = 0; $createdQuestions = 0;
+          while (($row = fgetcsv($f, 0, ',', '"', '\\')) !== false) {
+            if ($row === null) { continue; }
+            // Normalize row length to expected columns
+            $row = array_map(fn($v) => trim((string)$v), $row);
+            // Skip empty rows
+            $allEmpty = true; foreach ($row as $v) { if ($v !== '') { $allEmpty = false; break; } }
+            if ($allEmpty) { continue; }
+            $row = array_slice($row, 0, count($expected));
+            if (count($row) < count($expected)) {
+              $row = array_pad($row, count($expected), '');
+            }
             $data = array_combine($expected, $row);
             $key = trim($data['test_title']);
             if ($key === '') { continue; }
@@ -42,27 +59,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['user']['id']
               ]);
               $testIdMap[$key] = (int)$pdo->lastInsertId();
+              $createdTests++;
             }
             $testId = $testIdMap[$key];
             // create question
-            $qType = in_array($data['question_type'], ['single','multiple','text'], true) ? $data['question_type'] : 'single';
+            $qType = in_array(strtolower($data['question_type']), ['single','multiple','text'], true) ? strtolower($data['question_type']) : 'single';
             $qPoints = is_numeric($data['question_points']) ? (float)$data['question_points'] : 1;
             $pdo->prepare('INSERT INTO questions (test_id, question_text, question_type, points, correct_text_answer) VALUES (?,?,?,?,?)')
                 ->execute([$testId, $data['question_text'], $qType, $qPoints, $data['correct_text_answer'] ?: null]);
             $qid = (int)$pdo->lastInsertId();
+            $createdQuestions++;
 
             if ($qType !== 'text') {
               for ($i=1; $i<=4; $i++) {
                 $ct = trim((string)$data['choice_'.$i]);
                 if ($ct === '') { continue; }
-                $isCorrect = strtolower(trim((string)$data['choice_'.$i.'_correct'])) === 'true' ? 1 : 0;
+                $flag = strtolower(trim((string)$data['choice_'.$i.'_correct']));
+                $isCorrect = ($flag === 'true' || $flag === '1' || $flag === 'yes') ? 1 : 0;
                 $pdo->prepare('INSERT INTO choices (question_id, choice_text, is_correct) VALUES (?,?,?)')
                     ->execute([$qid, $ct, $isCorrect]);
               }
             }
           }
           $pdo->commit();
-          $success[] = 'Import completed successfully.';
+          $success[] = 'Import completed successfully. Created ' . $createdTests . ' test(s) and ' . $createdQuestions . ' question(s).';
         } catch (Throwable $e) {
           $pdo->rollBack();
           $errors[] = 'Import failed: ' . $e->getMessage();
