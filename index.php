@@ -78,21 +78,37 @@ include __DIR__ . '/includes/header.php';
   </div>
 </div>
 
+<?php
+// Prepare monthly attempt counts from DB
+if (is_admin()) {
+  $rows = pdo_fetch_all($pdo, 'SELECT DATE_FORMAT(submitted_at, "%Y-%m") m, COUNT(*) c FROM attempts WHERE submitted_at IS NOT NULL GROUP BY m ORDER BY m');
+} else {
+  $uid = $_SESSION['user']['id'];
+  $rows = pdo_fetch_all($pdo, 'SELECT DATE_FORMAT(at.submitted_at, "%Y-%m") m, COUNT(*) c FROM attempts at JOIN assignments a ON a.id = at.assignment_id WHERE at.submitted_at IS NOT NULL AND a.employee_id = ? GROUP BY m ORDER BY m', [$uid]);
+}
+// Fill 12 months window
+$months = [];$counts=[];
+$start = new DateTime(date('Y-m-01', strtotime('-11 months')));
+for ($i=0;$i<12;$i++) { $key = $start->format('Y-m'); $months[] = $key; $counts[$key]=0; $start->modify('+1 month'); }
+foreach ($rows as $r) { if (isset($counts[$r['m']])) { $counts[$r['m']] = (int)$r['c']; } }
+$labels = array_map(fn($m)=>date('M', strtotime($m.'-01')), array_keys($counts));
+$data = array_values($counts);
+?>
 <script>
   const ctx = document.getElementById('progressChart');
   if (ctx) {
     const data = {
-      labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+      labels: <?= json_encode($labels) ?>,
       datasets: [{
         label: 'Completed Attempts',
-        data: [3,4,5,6,4,7,10,8,9,12,11,14],
+        data: <?= json_encode($data) ?>,
         borderColor: '#06b6d4',
         backgroundColor: 'rgba(6,182,212,0.2)',
         tension: 0.35,
         fill: true
       }]
     };
-    new Chart(ctx, { type: 'line', data, options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } });
+    new Chart(ctx, { type: 'line', data, options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, precision: 0 } } } });
   }
 </script>
 

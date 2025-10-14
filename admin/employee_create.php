@@ -10,6 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim((string)post('name'));
     $email = trim((string)post('email'));
     $password = (string)post('password');
+    $role = (string)(post('role') ?? 'employee');
     $interview_date = trim((string)post('interview_date'));
 
     if ($name === '' || !validate_email($email) || strlen($password) < 6) {
@@ -20,8 +21,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$errors && $exists) { $errors[] = 'Email already exists.'; }
 
     if (!$errors) {
-        $pdo->prepare('INSERT INTO users (name, email, password_hash, role, interview_date) VALUES (?, ?, ?, "employee", ?)')
-            ->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT), $interview_date ?: null]);
+        if (!in_array($role, ['admin','employee'], true)) { $role = 'employee'; }
+        $pdo->prepare('INSERT INTO users (name, email, password_hash, role, interview_date) VALUES (?, ?, ?, ?, ?)')
+            ->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT), $role, $interview_date ?: null]);
         flash_set('success', 'Employee created.');
         redirect('admin/employees.php');
     }
@@ -48,6 +50,13 @@ include __DIR__ . '/../includes/header.php';
     <div>
       <label class="block text-sm text-slate-600 mb-1">Email</label>
       <input type="email" class="w-full border rounded px-3 py-2 focus-ring" name="email" required />
+    </div>
+    <div>
+      <label class="block text-sm text-slate-600 mb-1">Role</label>
+      <select class="w-full border rounded px-3 py-2" name="role">
+        <option value="employee">Employee</option>
+        <option value="admin">Admin</option>
+      </select>
     </div>
     <div>
       <label class="block text-sm text-slate-600 mb-1">Password</label>

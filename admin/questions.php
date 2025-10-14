@@ -6,47 +6,85 @@ $pdo = getPDO();
 
 $testId = (int)(get('test_id') ?? 0);
 $test = $testId ? pdo_fetch_one($pdo, 'SELECT * FROM tests WHERE id = ?', [$testId]) : null;
-if (!$test) {
-    flash_set('error', 'Test not found.');
-    redirect('admin/tests.php');
-}
 
 $action = get('action');
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_csrf_or_fail();
-    if ($action === 'create_question') {
+    if ($action === 'create_question' && $testId) {
         $text = trim((string)post('question_text'));
         $type = (string)post('question_type');
         $points = (float)(post('points') ?? 1);
         $correctText = $type === 'text' ? trim((string)post('correct_text_answer')) : null;
-        $pdo->prepare('INSERT INTO questions (test_id, question_text, question_type, points, correct_text_answer) VALUES (?, ?, ?, ?, ?)')
-            ->execute([$testId, $text, $type, $points, $correctText]);
-        flash_set('success', 'Question added.');
+
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare('INSERT INTO questions (test_id, question_text, question_type, points, correct_text_answer) VALUES (?, ?, ?, ?, ?)')
+                ->execute([$testId, $text, $type, $points, $correctText]);
+            $qid = (int)$pdo->lastInsertId();
+
+            if ($type !== 'text') {
+                // Exactly 4 choices
+                $choices = [];
+                for ($i = 1; $i <= 4; $i++) {
+                    $ct = trim((string)post('choice_' . $i));
+                    $isC = (int)(post('correct_' . $i) ? 1 : 0);
+                    $choices[] = [$ct, $isC];
+                }
+                // Validation: at least one correct, and for single exactly one
+                $numCorrect = array_sum(array_map(fn($c) => $c[1], $choices));
+                if ($numCorrect === 0) {
+                    throw new RuntimeException('Select at least one correct choice.');
+                }
+                if ($type === 'single' && $numCorrect !== 1) {
+                    throw new RuntimeException('Single choice must have exactly one correct answer.');
+                }
+                foreach ($choices as [$ct, $isC]) {
+                    $pdo->prepare('INSERT INTO choices (question_id, choice_text, is_correct) VALUES (?, ?, ?)')
+                        ->execute([$qid, $ct, $isC]);
+                }
+            }
+
+            $pdo->commit();
+            flash_set('success', 'Question added.');
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            flash_set('error', 'Failed to add question: ' . ($e->getMessage())) ;
+        }
         redirect('admin/questions.php?test_id=' . $testId);
     }
-    if ($action === 'delete_question') {
+    if ($action === 'delete_question' && $testId) {
         $id = (int)post('id');
         $pdo->prepare('DELETE FROM questions WHERE id = ?')->execute([$id]);
         flash_set('success', 'Question deleted.');
         redirect('admin/questions.php?test_id=' . $testId);
     }
-    if ($action === 'add_choice') {
-        $qid = (int)post('question_id');
-        $choice = trim((string)post('choice_text'));
-        $isCorrect = (int)(post('is_correct') ? 1 : 0);
-        $pdo->prepare('INSERT INTO choices (question_id, choice_text, is_correct) VALUES (?, ?, ?)')
-            ->execute([$qid, $choice, $isCorrect]);
-        flash_set('success', 'Choice added.');
-        redirect('admin/questions.php?test_id=' . $testId);
-    }
-    if ($action === 'delete_choice') {
-        $cid = (int)post('choice_id');
-        $pdo->prepare('DELETE FROM choices WHERE id = ?')->execute([$cid]);
-        flash_set('success', 'Choice removed.');
-        redirect('admin/questions.php?test_id=' . $testId);
-    }
 }
 
+// When test not selected, show a selector
+if (!$testId || !$test) {
+    $tests = pdo_fetch_all($pdo, 'SELECT id, title FROM tests ORDER BY title ASC');
+    include __DIR__ . '/../includes/header.php';
+    ?>
+    <div class="max-w-md mx-auto">
+      <h1 class="text-xl font-semibold mb-3">Select a Test</h1>
+      <form method="get" class="bg-white border border-slate-200 rounded p-4 space-y-3">
+        <div>
+          <label class="block text-sm text-slate-600 mb-1">Test</label>
+          <select name="test_id" class="w-full border rounded px-3 py-2">
+            <?php foreach ($tests as $t): ?>
+              <option value="<?= (int)$t['id'] ?>"><?= e($t['title']) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div>
+          <button class="px-4 py-2 rounded bg-primary-600 text-white" type="submit">Open Questions</button>
+        </div>
+      </form>
+    </div>
+    <?php include __DIR__ . '/../includes/footer.php';
+    return; }
+
+// Load questions for selected test
 $questions = pdo_fetch_all($pdo, 'SELECT * FROM questions WHERE test_id = ? ORDER BY id ASC', [$testId]);
 $choicesByQ = [];
 if ($questions) {
@@ -61,11 +99,11 @@ include __DIR__ . '/../includes/header.php';
 ?>
 <div class="mb-4">
   <a href="<?= base_url('admin/tests.php') ?>" class="text-sm text-primary-700 hover:underline">&larr; Back to Tests</a>
+  <div class="text-sm text-slate-500 mt-1">Managing: <span class="text-primary-700 font-medium"><?= e($test['title']) ?></span></div>
 </div>
-<h1 class="text-xl font-semibold mb-2">Questions for: <span class="text-primary-700"><?= e($test['title']) ?></span></h1>
 
 <div class="bg-white border border-slate-200 rounded p-4 mb-6">
-  <h2 class="font-semibold mb-3">Add Question</h2>
+  <h2 class="font-semibold mb-3">Add Question (with 4 choices)</h2>
   <form method="post" action="<?= base_url('admin/questions.php?action=create_question&test_id=' . $testId) ?>" class="grid grid-cols-1 gap-3">
     <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
     <div>
@@ -90,6 +128,19 @@ include __DIR__ . '/../includes/header.php';
         <input type="text" name="correct_text_answer" class="w-full border rounded px-3 py-2 focus-ring" />
       </div>
     </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <?php for ($i=1; $i<=4; $i++): ?>
+        <div class="border rounded p-3">
+          <label class="block text-xs text-slate-600 mb-1">Choice <?= $i ?></label>
+          <input name="choice_<?= $i ?>" class="w-full border rounded px-3 py-2 focus-ring" placeholder="Answer option" />
+          <label class="mt-2 inline-flex items-center gap-2 text-sm">
+            <input type="checkbox" name="correct_<?= $i ?>" class="border rounded"> Correct
+          </label>
+        </div>
+      <?php endfor; ?>
+    </div>
+
     <div>
       <button class="px-4 py-2 rounded bg-primary-600 text-white" type="submit">Add Question</button>
     </div>
@@ -114,36 +165,14 @@ include __DIR__ . '/../includes/header.php';
       <?php if ($q['question_type'] !== 'text'): ?>
         <div class="mt-3">
           <div class="text-xs text-slate-500 mb-1">Choices</div>
-          <ul class="space-y-1">
+          <ul class="space-y-1 list-disc list-inside">
             <?php foreach ($choicesByQ[$q['id']] ?? [] as $ch): ?>
-              <li class="flex items-center justify-between">
-                <span class="<?= $ch['is_correct'] ? 'text-green-700' : '' ?>">- <?= e($ch['choice_text']) ?> <?= $ch['is_correct'] ? '(correct)' : '' ?></span>
-                <form method="post" action="<?= base_url('admin/questions.php?action=delete_choice&test_id=' . $testId) ?>">
-                  <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
-                  <input type="hidden" name="choice_id" value="<?= (int)$ch['id'] ?>">
-                  <button class="text-sm text-red-700 hover:underline" type="submit">Remove</button>
-                </form>
-              </li>
+              <li class="<?= $ch['is_correct'] ? 'text-green-700 font-medium' : '' ?>"><?= e($ch['choice_text']) ?> <?= $ch['is_correct'] ? '(correct)' : '' ?></li>
             <?php endforeach; ?>
           </ul>
-
-          <form method="post" action="<?= base_url('admin/questions.php?action=add_choice&test_id=' . $testId) ?>" class="mt-3 grid grid-cols-6 gap-2 items-end">
-            <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
-            <input type="hidden" name="question_id" value="<?= (int)$q['id'] ?>">
-            <div class="col-span-5">
-              <label class="block text-xs text-slate-600 mb-1">Choice text</label>
-              <input name="choice_text" class="w-full border rounded px-3 py-2 focus-ring" required />
-            </div>
-            <label class="flex items-center gap-2">
-              <input type="checkbox" name="is_correct" class="border rounded" /> Correct
-            </label>
-            <div class="col-span-6">
-              <button class="px-3 py-2 rounded bg-slate-800 text-white text-sm" type="submit">Add Choice</button>
-            </div>
-          </form>
         </div>
       <?php else: ?>
-        <div class="mt-2 text-xs text-slate-500">Text answer configured: <?= e($q['correct_text_answer']) ?: '—' ?></div>
+        <div class="mt-2 text-xs text-slate-500">Text answer: <?= e($q['correct_text_answer']) ?: '—' ?></div>
       <?php endif; ?>
     </div>
   <?php endforeach; ?>
