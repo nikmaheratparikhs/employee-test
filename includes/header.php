@@ -32,7 +32,7 @@ $title = $title ?? $config['app_name'];
 <body class="bg-slate-50 text-slate-800">
   <div class="min-h-screen flex">
     <?php include __DIR__ . '/sidebar.php'; ?>
-    <main class="flex-1 flex flex-col">
+    <main class="flex-1 flex flex-col ml-0 md:ml-64">
       <header class="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-slate-200">
         <div class="px-4 py-3 flex items-center justify-between">
           <div class="flex items-center gap-2">
