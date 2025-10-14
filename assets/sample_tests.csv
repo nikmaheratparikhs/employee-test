@@ -1,0 +1,5 @@
+test_title,test_description,test_category,test_difficulty,test_time_limit_minutes,question_text,question_type,question_points,choice_1,choice_1_correct,choice_2,choice_2_correct,choice_3,choice_3_correct,choice_4,choice_4_correct,correct_text_answer
+Basic Excel Test,Basics of Excel operations,Excel,beginner,20,What is the shortcut to copy?,single,1,Ctrl+C,true,Ctrl+X,false,Ctrl+V,false,Ctrl+Z,false,
+Basic Excel Test,Basics of Excel operations,Excel,beginner,20,Select all cells shortcut?,single,1,Ctrl+A,true,Ctrl+S,false,Ctrl+L,false,Ctrl+E,false,
+Basic Excel Test,Basics of Excel operations,Excel,beginner,20,Which keys insert current date?,multiple,1,Ctrl+; (semicolon),true,Ctrl+Shift+: (colon),true,Ctrl+D,false,Ctrl+R,false,
+Basic Excel Test,Basics of Excel operations,Excel,beginner,20,Explain difference between workbook and worksheet.,text,1,,,,,,,,"A workbook contains one or more worksheets"

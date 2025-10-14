@@ -1,0 +1,12 @@
+# Secure sensitive paths
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# Deny direct access to config, includes, and schema
+RewriteRule ^config/ - [F,L]
+RewriteRule ^includes/ - [F,L]
+RewriteRule ^schema\.sql$ - [F,L]
+
+# Prevent directory listing
+Options -Indexes
+</IfModule>
