@@ -34,7 +34,7 @@ $title = $title ?? $config['app_name'];
     <?php include __DIR__ . '/sidebar.php'; ?>
     <main class="flex-1 flex flex-col">
       <header class="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-slate-200">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="px-4 py-3 flex items-center justify-between">
           <div class="flex items-center gap-2">
             <button id="sidebarToggle" class="md:hidden inline-flex items-center p-2 rounded hover:bg-slate-100 focus:outline-none" aria-label="Toggle sidebar">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
@@ -51,7 +51,7 @@ $title = $title ?? $config['app_name'];
           </div>
         </div>
       </header>
-      <div class="flex-1 max-w-7xl mx-auto p-4 w-full">
+      <div class="flex-1 p-4 w-full">
         <?php if (!empty($flash)): ?>
           <div class="space-y-2 mb-4">
             <?php foreach ($flash as $type => $messages): ?>

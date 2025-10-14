@@ -195,7 +195,7 @@ include __DIR__ . '/../includes/header.php';
           <div class="font-medium text-slate-800"><?= nl2br(e($q['question_text'])) ?></div>
         </div>
         <div class="space-x-3">
-          <label for="edit-q-<?= (int)$q['id'] ?>" class="text-slate-700 hover:underline text-sm cursor-pointer">Edit</label>
+          <a href="<?= base_url('admin/question_edit.php?test_id=' . $testId . '&id=' . (int)$q['id']) ?>" class="text-slate-700 hover:underline text-sm">Edit</a>
           <form method="post" action="<?= base_url('admin/questions.php?action=delete_question&test_id=' . $testId) ?>" class="inline" onsubmit="return confirm('Delete this question?')">
             <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
             <input type="hidden" name="id" value="<?= (int)$q['id'] ?>">
@@ -218,59 +218,7 @@ include __DIR__ . '/../includes/header.php';
       <?php endif; ?>
     </div>
 
-    <!-- Edit drawer -->
-    <input type="checkbox" id="edit-q-<?= (int)$q['id'] ?>" class="hidden" />
-    <div class="fixed inset-0 bg-black/30 hidden items-center justify-center p-4" x-data x-show="document.getElementById('edit-q-<?= (int)$q['id'] ?>').checked" x-transition>
-      <div class="bg-white rounded shadow-xl w-full max-w-2xl p-6">
-        <h2 class="font-semibold mb-4">Edit Question #<?= (int)$q['id'] ?></h2>
-        <form method="post" action="<?= base_url('admin/questions.php?action=update_question&test_id=' . $testId) ?>" class="grid grid-cols-1 gap-3">
-          <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
-          <input type="hidden" name="id" value="<?= (int)$q['id'] ?>">
-          <div>
-            <label class="block text-sm text-slate-600 mb-1">Question</label>
-            <textarea class="w-full border rounded px-3 py-2 focus-ring" name="question_text" required><?= e($q['question_text']) ?></textarea>
-          </div>
-          <div class="grid grid-cols-3 gap-3">
-            <div>
-              <label class="block text-sm text-slate-600 mb-1">Type</label>
-              <select name="question_type" class="w-full border rounded px-3 py-2">
-                <?php foreach (['single'=>'Single choice','multiple'=>'Multiple choice','text'=>'Text answer'] as $k=>$v): ?>
-                  <option value="<?= $k ?>" <?= $q['question_type']===$k?'selected':'' ?>><?= $v ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm text-slate-600 mb-1">Points</label>
-              <input type="number" step="0.5" min="0" name="points" value="<?= e($q['points']) ?>" class="w-full border rounded px-3 py-2 focus-ring" />
-            </div>
-            <div>
-              <label class="block text-sm text-slate-600 mb-1">Correct text (if text type)</label>
-              <input type="text" name="correct_text_answer" value="<?= e((string)$q['correct_text_answer']) ?>" class="w-full border rounded px-3 py-2 focus-ring" />
-            </div>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <?php
-              $existing = $choicesByQ[$q['id']] ?? [];
-              for ($i=1; $i<=4; $i++):
-                $ct = $existing[$i-1]['choice_text'] ?? '';
-                $isC = isset($existing[$i-1]) ? (int)$existing[$i-1]['is_correct'] : 0;
-            ?>
-              <div class="border rounded p-3">
-                <label class="block text-xs text-slate-600 mb-1">Choice <?= $i ?></label>
-                <input name="choice_<?= $i ?>" class="w-full border rounded px-3 py-2 focus-ring" value="<?= e($ct) ?>" />
-                <label class="mt-2 inline-flex items-center gap-2 text-sm">
-                  <input type="checkbox" name="correct_<?= $i ?>" class="border rounded" <?= $isC ? 'checked' : '' ?>> Correct
-                </label>
-              </div>
-            <?php endfor; ?>
-          </div>
-          <div class="flex justify-end gap-2">
-            <label for="edit-q-<?= (int)$q['id'] ?>" class="px-4 py-2 rounded border">Cancel</label>
-            <button class="px-4 py-2 rounded bg-primary-600 text-white" type="submit">Save</button>
-          </div>
-        </form>
-      </div>
-    </div>
+    
   <?php endforeach; ?>
 </div>
 <?php include __DIR__ . '/../includes/footer.php'; ?>

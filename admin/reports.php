@@ -18,19 +18,19 @@ include __DIR__ . '/../includes/header.php';
 <h1 class="text-xl font-semibold mb-4">Reports</h1>
 
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 mb-6">
-  <div class="card card-hover bg-white rounded p-4 border border-slate-200">
+  <div class="card card-hover bg-white rounded p-4 border border-slate-200 w-full">
     <div class="text-slate-500 text-sm">Employees</div>
     <div class="text-3xl font-semibold text-slate-800"><?= (int)$kpis['employees'] ?></div>
   </div>
-  <div class="card card-hover bg-white rounded p-4 border border-slate-200">
+  <div class="card card-hover bg-white rounded p-4 border border-slate-200 w-full">
     <div class="text-slate-500 text-sm">Tests</div>
     <div class="text-3xl font-semibold text-slate-800"><?= (int)$kpis['tests'] ?></div>
   </div>
-  <div class="card card-hover bg-white rounded p-4 border border-slate-200">
+  <div class="card card-hover bg-white rounded p-4 border border-slate-200 w-full">
     <div class="text-slate-500 text-sm">Assignments</div>
     <div class="text-3xl font-semibold text-slate-800"><?= (int)$kpis['assignments'] ?></div>
   </div>
-  <div class="card card-hover bg-white rounded p-4 border border-slate-200">
+  <div class="card card-hover bg-white rounded p-4 border border-slate-200 w-full">
     <div class="text-slate-500 text-sm">Attempts</div>
     <div class="text-3xl font-semibold text-slate-800"><?= (int)$kpis['attempts'] ?></div>
   </div>
@@ -55,7 +55,7 @@ include __DIR__ . '/../includes/header.php';
             <td class="p-3"><?= e($r['title']) ?></td>
             <td class="p-3 text-slate-600"><?= e($r['submitted_at']) ?></td>
             <td class="p-3">
-              <span class="px-2 py-0.5 rounded bg-sky-100 text-sky-800 text-xs font-medium"><?= (int)$r['score_decimal'] ?> pts • <?= (float)$r['percent'] ?>%</span>
+              <span class="px-2 py-0.5 rounded bg-sky-100 text-sky-800 text-xs font-medium"><?= (int)$r['score_decimal'] ?>/<?= (int)$r['total_points'] ?> pts • <?= (float)$r['percent'] ?>%</span>
             </td>
           </tr>
         <?php endforeach; ?>
