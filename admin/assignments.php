@@ -56,6 +56,11 @@ include __DIR__ . '/../includes/header.php';
         </tr>
       </thead>
       <tbody>
+        <?php if (!$list): ?>
+          <tr>
+            <td colspan="5" class="p-6 text-center text-slate-500">No Data</td>
+          </tr>
+        <?php endif; ?>
         <?php foreach ($list as $a): ?>
           <tr class="border-t">
             <td class="p-3 font-medium text-slate-800"><?= e($a['employee_name']) ?></td>

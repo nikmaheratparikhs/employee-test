@@ -37,6 +37,11 @@ include __DIR__ . '/../includes/header.php';
         </tr>
       </thead>
       <tbody>
+        <?php if (!$employees): ?>
+          <tr>
+            <td colspan="7" class="p-6 text-center text-slate-500">No Data</td>
+          </tr>
+        <?php endif; ?>
         <?php foreach ($employees as $u): ?>
           <?php
             $metrics = pdo_fetch_one(
