@@ -36,11 +36,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $pdo->beginTransaction();
     try {
-        $totalPoints = 0.0;
-        $score = 0.0;
+        // Score based purely on number of questions: 1 point per correct answer
+        $totalPoints = count($questions);
+        $score = 0;
         foreach ($questions as $q) {
             $qid = (int)$q['id'];
-            $totalPoints += (float)$q['points'];
             $answerText = null;
             $pdo->prepare('INSERT INTO answers (attempt_id, question_id, answer_text) VALUES (?, ?, ?)')
                 ->execute([$attempt['id'], $qid, null]);
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->prepare('UPDATE answers SET answer_text = ? WHERE id = ?')->execute([$answerText, $answerId]);
                 if ($q['correct_text_answer'] !== null && $answerText !== '') {
                     if (mb_strtolower(trim($q['correct_text_answer'])) === mb_strtolower(trim($answerText))) {
-                        $score += (float)$q['points'];
+                        $score += 1;
                     }
                 }
             } else if ($q['question_type'] === 'single') {
@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // correct?
                     $choice = pdo_fetch_one($pdo, 'SELECT is_correct FROM choices WHERE id = ?', [$selected]);
                     if ($choice && (int)$choice['is_correct'] === 1) {
-                        $score += (float)$q['points'];
+                        $score += 1;
                     }
                 }
             } else if ($q['question_type'] === 'multiple') {
@@ -76,16 +76,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 sort($selected);
                 sort($correctIds);
                 if ($selected === $correctIds && count($correctIds) > 0) {
-                    $score += (float)$q['points'];
+                    $score += 1;
                 }
             }
         }
         $percent = $totalPoints > 0 ? round(($score / $totalPoints) * 100, 2) : 0.0;
         $pdo->prepare('UPDATE attempts SET submitted_at = NOW(), score_decimal = ?, total_points = ?, percent = ? WHERE id = ?')
-            ->execute([$score, $totalPoints, $percent, $attempt['id']]);
+            ->execute([(int)$score, (int)$totalPoints, $percent, $attempt['id']]);
         $pdo->prepare('UPDATE assignments SET status = "completed" WHERE id = ?')->execute([$assignmentId]);
         $pdo->commit();
-        flash_set('success', 'Test submitted. Score: ' . $percent . '%');
+        flash_set('success', 'Test submitted.');
         redirect('employee/history.php');
     } catch (Throwable $e) {
         $pdo->rollBack();
@@ -106,7 +106,7 @@ include __DIR__ . '/../includes/header.php';
   <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
   <?php foreach ($questions as $q): ?>
     <div class="bg-white border border-slate-200 rounded p-4">
-      <div class="text-slate-500 text-xs mb-1">Question #<?= (int)$q['id'] ?> • <?= e(ucfirst($q['question_type'])) ?> • <?= e($q['points']) ?> pts</div>
+      <div class="text-slate-500 text-xs mb-1">Question #<?= (int)$q['id'] ?> • <?= e(ucfirst($q['question_type'])) ?></div>
       <div class="font-medium text-slate-800 mb-3"><?= nl2br(e($q['question_text'])) ?></div>
       <?php if ($q['question_type'] === 'text'): ?>
         <textarea class="w-full border rounded px-3 py-2 focus-ring" name="q_<?= (int)$q['id'] ?>" rows="3" placeholder="Type your answer..."></textarea>
