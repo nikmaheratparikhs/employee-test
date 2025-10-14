@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
 ?>
-<aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-64 bg-slate-900 text-slate-100 transform -translate-x-full md:translate-x-0 transition-transform duration-200 z-20 shadow-xl">
+<aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-slate-900 text-slate-100 transform -translate-x-full md:translate-x-0 transition-transform duration-200 z-20 shadow-xl overflow-y-auto">
   <div class="h-16 flex items-center px-4 border-b border-slate-800">
     <span class="font-semibold">Menu</span>
   </div>
